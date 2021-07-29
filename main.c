@@ -9,6 +9,10 @@
 
 #include "validators.h"
 
+static bool SHOW_INODE = false;
+static bool LONG_LIST_FORMAT = false;
+static bool LIST_RECURSIVELY = false;
+
 void getAndPrintGroup(gid_t grpNum) {
     struct group *grp;
 
@@ -33,21 +37,74 @@ void getAndPrintUserName(uid_t uid) {
     }
 }
 
+bool isValidFile(const struct dirent *file) {
+    return (strncmp(file->d_name, ".", strlen(file->d_name)) != 0 &&
+            strncmp(file->d_name, "..", strlen(file->d_name)) != 0 &&
+            file->d_name[0] != '.');
+}
+
+void printFileName(const struct dirent *file) { printf("%s\n", file->d_name); }
+void printFileType(const struct dirent *file) { printf("%u ", file->d_type); }
+void printFileSize(const struct dirent *file) {
+    printf("%hu ", file->d_reclen);
+}
+void printInode(const struct dirent *file) { printf("%lu ", file->d_ino); }
+void printPath(const char *path) { printf("%s:\n", path); }
+
 void printDir(const char *path) {
     DIR *pDir = validatePath(path);
     if (!pDir) {
         return;
     }
     const struct dirent *curr = readdir(pDir);
+    if (LIST_RECURSIVELY) {
+        printPath(path);
+    }
     while (curr) {
-        if (strncmp(curr->d_name, ".", strlen(curr->d_name)) != 0 &&
-            strncmp(curr->d_name, "..", strlen(curr->d_name)) != 0) {
-            printf("inode #: %lu, size: %hu, type: %u, name: %s\n", curr->d_ino,
-                   curr->d_reclen, curr->d_type, curr->d_name);
+        if (isValidFile(curr)) {
+            if (SHOW_INODE) {
+                printInode(curr);
+            }
+            if (LONG_LIST_FORMAT) {
+                printFileSize(curr);
+            }
+            printFileType(curr);
+            printFileName(curr);
+            if (LIST_RECURSIVELY && curr->d_type == 4) {
+                const char slash = '/';
+                unsigned int subDirLen = 0;
+                subDirLen += strlen(path);
+                subDirLen += strlen(&slash);  // accounts for the space for
+                                              // slash and extra space for '\0'
+                subDirLen += strlen(curr->d_name);
+
+                char *subDir = calloc(subDirLen, sizeof(char));
+                snprintf(subDir, subDirLen, "%s/%s", path, curr->d_name);
+                // printf("\n\nsubDir: %s\n\n", subDir);
+                printDir(subDir);
+                free(subDir);
+                subDir = NULL;
+            }
         }
         curr = readdir(pDir);
     }
     closedir(pDir);
+}
+
+void setSelectedFlags(const char *flags) {
+    const size_t len = strlen(flags);
+    unsigned int i = 0;
+
+    while (i != len) {
+        if (flags[i] == 'i') {
+            SHOW_INODE = true;
+        } else if (flags[i] == 'l') {
+            LONG_LIST_FORMAT = true;
+        } else if (flags[i] == 'R') {
+            LIST_RECURSIVELY = true;
+        }
+        i++;
+    }
 }
 
 int main(int argc, char **argv) {
@@ -83,22 +140,23 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    setSelectedFlags(flags);
     printDir(path);
 
     printf("\n\n");
 
-    struct group *grp;
+    // struct group *grp;
 
-    getAndPrintGroup(1001);
-    getAndPrintGroup(514378);
-    getAndPrintGroup(103);
-    getAndPrintGroup(1000);
+    // getAndPrintGroup(1001);
+    // getAndPrintGroup(514378);
+    // getAndPrintGroup(103);
+    // getAndPrintGroup(1000);
 
-    getAndPrintUserName(59894);
-    getAndPrintUserName(23524);
-    getAndPrintUserName(20746);
-    getAndPrintUserName(5970);
-    getAndPrintUserName(10485);
+    // getAndPrintUserName(59894);
+    // getAndPrintUserName(23524);
+    // getAndPrintUserName(20746);
+    // getAndPrintUserName(5970);
+    // getAndPrintUserName(10485);
 
     return 0;
 }

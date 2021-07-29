@@ -1,5 +1,6 @@
 #include "validators.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -7,15 +8,27 @@ bool validateFlags(const char *flags) {
     if (!flags) {
         return true;
     }
-    if (strlen(flags) > 3) {
+    size_t len = strlen(flags);
+    if (len > 4) {
         printf(
             "Maximum expected number of flags are 3 excluding \"-\", got %zd\n",
-            strlen(flags));
+            strlen(flags) - 1);
         return false;
     }
-    if (strncmp(flags, "-", 1) != 0 || strlen(flags) < 2) {
+    if (strncmp(flags, "-", 1) != 0 || len < 2) {
         printf("Expected \"-\" before flag(s), got \"%s\"\n", flags);
         return false;
+    }
+    unsigned int i = 0;
+    while (i != len) {
+        if (i != 0 && flags[i] != 'i' && flags[i] != 'l' && flags[i] != 'R') {
+            printf(
+                "Found unknown flag option \"%c\" , only i, l, and R are "
+                "supported\n",
+                flags[i]);
+            return false;
+        }
+        i++;
     }
     return true;
 }
@@ -26,6 +39,9 @@ DIR *validatePath(const char *path) {
         return pDir;
     } else {
         printf("Could not open the path \"%s\"\n", path);
+        printf("path len: %d\n", strlen(path));
+        fprintf(stderr, "Value of errno: %d\n", errno);
+        perror("Error printed by perror");
         return NULL;
     }
 }
