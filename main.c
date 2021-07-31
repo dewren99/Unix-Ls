@@ -1,5 +1,6 @@
 
 #include <dirent.h>
+#include <errno.h>
 #include <grp.h>
 #include <pwd.h>
 #include <stddef.h>
@@ -44,6 +45,25 @@ bool isValidFile(const struct dirent *file) {
             file->d_name[0] != '.');
 }
 
+// inspiration from
+// https://stackoverflow.com/questions/10323060/printing-file-permissions-like-ls-l-using-stat2-in-c
+void printPermissions(const struct stat *buf) {
+    if (!LONG_LIST_FORMAT) {
+        return;
+    }
+    const mode_t mode = buf->st_mode;
+    printf((S_ISDIR(mode)) ? "d" : "-");
+    printf((mode & S_IRUSR) ? "r" : "-");
+    printf((mode & S_IWUSR) ? "w" : "-");
+    printf((mode & S_IXUSR) ? "x" : "-");
+    printf((mode & S_IRGRP) ? "r" : "-");
+    printf((mode & S_IWGRP) ? "w" : "-");
+    printf((mode & S_IXGRP) ? "x" : "-");
+    printf((mode & S_IROTH) ? "r" : "-");
+    printf((mode & S_IWOTH) ? "w" : "-");
+    printf((mode & S_IXOTH) ? "x" : "-");
+}
+
 void printFileName(const struct dirent *file) { printf("%s\n", file->d_name); }
 void printFileType(const struct dirent *file) { printf("%u ", file->d_type); }
 void printFileLength(const struct dirent *file) {  // not file size
@@ -68,6 +88,7 @@ void printDir(const char *path) {
     if (!pDir) {
         return;
     }
+    const char slash = '/';
     const struct dirent *curr = readdir(pDir);
     if (LIST_RECURSIVELY) {
         printRecursiveSpacer();
@@ -75,8 +96,22 @@ void printDir(const char *path) {
     }
     while (curr) {
         if (isValidFile(curr)) {
+            unsigned int subDirLen = 0;
+            subDirLen += strlen(path);
+            subDirLen += strlen(&slash);  // accounts for the space for
+                                          // slash and extra space for '\0'
+            subDirLen += strlen(curr->d_name);
+
+            char *subDir = calloc(subDirLen, sizeof(char));
+            snprintf(subDir, subDirLen, "%s/%s", path, curr->d_name);
+
             struct stat *buf = malloc(sizeof(struct stat));
-            stat(path, buf);
+            if (stat(subDir, buf) == -1) {
+                fprintf(stderr, "stat() errno: %d\n", errno);
+                perror("stat() error: ");
+            }
+
+            printPermissions(buf);
             printNumOfHardLinks(buf);
             printInode(curr);
             printFileLength(curr);
@@ -84,20 +119,12 @@ void printDir(const char *path) {
             printFileSize(buf);
             printFileName(curr);
             if (LIST_RECURSIVELY && curr->d_type == 4) {
-                const char slash = '/';
-                unsigned int subDirLen = 0;
-                subDirLen += strlen(path);
-                subDirLen += strlen(&slash);  // accounts for the space for
-                                              // slash and extra space for '\0'
-                subDirLen += strlen(curr->d_name);
-
-                char *subDir = calloc(subDirLen, sizeof(char));
-                snprintf(subDir, subDirLen, "%s/%s", path, curr->d_name);
                 printDir(subDir);
-                free(subDir);
-                subDir = NULL;
             }
+            free(subDir);
             free(buf);
+            subDir = NULL;
+            buf = NULL;
         }
         curr = readdir(pDir);
     }
