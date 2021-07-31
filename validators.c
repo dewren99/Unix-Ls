@@ -39,7 +39,7 @@ DIR *validatePath(const char *path) {
         return pDir;
     } else {
         printf("Could not open the path \"%s\"\n", path);
-        printf("path len: %d\n", strlen(path));
+        printf("path len: %ld\n", strlen(path));
         fprintf(stderr, "Value of errno: %d\n", errno);
         perror("Error printed by perror");
         return NULL;

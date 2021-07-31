@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "validators.h"
 
@@ -45,11 +46,22 @@ bool isValidFile(const struct dirent *file) {
 
 void printFileName(const struct dirent *file) { printf("%s\n", file->d_name); }
 void printFileType(const struct dirent *file) { printf("%u ", file->d_type); }
-void printFileSize(const struct dirent *file) {
-    printf("%hu ", file->d_reclen);
+void printFileLength(const struct dirent *file) {  // not file size
+    if (LONG_LIST_FORMAT) {
+        printf("%hu ", file->d_reclen);
+    }
 }
-void printInode(const struct dirent *file) { printf("%lu ", file->d_ino); }
+void printInode(const struct dirent *file) {
+    if (SHOW_INODE) {
+        printf("%lu ", file->d_ino);
+    }
+}
 void printPath(const char *path) { printf("%s:\n", path); }
+void printRecursiveSpacer() { printf("\n"); }
+void printFileSize(const struct stat *buf) { printf("%ld ", buf->st_size); }
+void printNumOfHardLinks(const struct stat *buf) {
+    printf("%ld ", buf->st_nlink);
+}
 
 void printDir(const char *path) {
     DIR *pDir = validatePath(path);
@@ -58,17 +70,18 @@ void printDir(const char *path) {
     }
     const struct dirent *curr = readdir(pDir);
     if (LIST_RECURSIVELY) {
+        printRecursiveSpacer();
         printPath(path);
     }
     while (curr) {
         if (isValidFile(curr)) {
-            if (SHOW_INODE) {
-                printInode(curr);
-            }
-            if (LONG_LIST_FORMAT) {
-                printFileSize(curr);
-            }
+            struct stat *buf = malloc(sizeof(struct stat));
+            stat(path, buf);
+            printNumOfHardLinks(buf);
+            printInode(curr);
+            printFileLength(curr);
             printFileType(curr);
+            printFileSize(buf);
             printFileName(curr);
             if (LIST_RECURSIVELY && curr->d_type == 4) {
                 const char slash = '/';
@@ -80,11 +93,11 @@ void printDir(const char *path) {
 
                 char *subDir = calloc(subDirLen, sizeof(char));
                 snprintf(subDir, subDirLen, "%s/%s", path, curr->d_name);
-                // printf("\n\nsubDir: %s\n\n", subDir);
                 printDir(subDir);
                 free(subDir);
                 subDir = NULL;
             }
+            free(buf);
         }
         curr = readdir(pDir);
     }
