@@ -80,7 +80,7 @@ void printPath(const char *path) { printf("%s:\n", path); }
 void printRecursiveSpacer() { printf("\n"); }
 void printFileSize(const struct stat *buf) { printf("%ld ", buf->st_size); }
 void printNumOfHardLinks(const struct stat *buf) {
-    printf("%ld ", buf->st_nlink);
+    printf(" %ld ", buf->st_nlink);
 }
 
 void printDir(const char *path) {
@@ -110,11 +110,10 @@ void printDir(const char *path) {
                 fprintf(stderr, "stat() errno: %d\n", errno);
                 perror("stat() error: ");
             }
-
+            printInode(curr);
             printPermissions(buf);
             printNumOfHardLinks(buf);
-            printInode(curr);
-            printFileLength(curr);
+            // printFileLength(curr);
             printFileType(curr);
             printFileSize(buf);
             printFileName(curr);
