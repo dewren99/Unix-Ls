@@ -251,7 +251,7 @@ void setSelectedFlags(const char *flags) {
 }
 
 int main(int argc, char **argv) {
-    const char defaultPath = '.';
+    const char defaultPath[2] = {'.', '\0'};
     const char *flags = NULL;
     const char *path = NULL;
 
@@ -261,18 +261,18 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    path = defaultPath;
     if (argc == 3) {
         path = argv[2];
         flags = argv[1];
-    } else if (argc == 2) {
+    }
+    if (argc == 2) {
         // check if 2nd arg are flags, else its path
         if (strncmp(argv[1], "-", 1) == 0) {
             flags = argv[1];
         } else {
             path = argv[1];
         }
-    } else {
-        path = &defaultPath;
     }
 
     // printf("argc: %d\n", argc);

@@ -1,8 +1,8 @@
 make :
-	make clean && make unixLs
+	make clean && make UnixLs
 
-unixLs: main.c
-	gcc -o unixLs main.c validators.c
+UnixLs: main.c
+	gcc -o UnixLs main.c validators.c
 
 clean:
-	rm -f unixLs
+	rm -f UnixLs
