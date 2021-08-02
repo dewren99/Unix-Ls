@@ -1,0 +1,76 @@
+dewren99@ubuntu:~/Desktop/300-a4$ ./UnixLs -ilR /home/dewren99/Desktop/
+/home/dewren99/Desktop/:
+393862 drwxrwxr-x  4 dewren99 dewren99   4096 Aug  2 2021 15:42 300-a4
+393229 drwxrwxr-x  4 dewren99 dewren99   4096 Jul 31 2021 15:08 SFU
+
+/home/dewren99/Desktop/300-a4:
+399966 -rw-rw-r--  1 dewren99 dewren99   1232 Jul 30 2021 21:18 validators.c
+400093 -rwxrwxr-x  1 dewren99 dewren99  22800 Aug  2 2021 15:42 UnixLs
+393379 -rw-rw-r--  1 dewren99 dewren99    106 Aug  2 2021 15:42 Makefile
+393699 -rw-rw-r--  1 dewren99 dewren99   8323 Aug  2 2021 15:38 main.c
+399452 -rw-rw-r--  1 dewren99 dewren99    141 Jul 28 2021 18:30 validators.h
+
+/home/dewren99/Desktop/SFU:
+393892 drwxrwxr-x  5 dewren99 dewren99   4096 Aug  2 2021 15:42 CMPT300
+393569 drwxrwxr-x  2 dewren99 dewren99   4096 Jul 27 2021 21:13 CMPT354
+393713 -rw-rw-r--  1 dewren99 dewren99      0 Jul 31 2021 15:09 link_test.txt
+
+/home/dewren99/Desktop/SFU/CMPT300:
+920258 -rw-rw-r--  1 dewren99 dewren99   5495 Jun 28 2021 16:02 list.h
+393878 -rw-rw-r--  2 dewren99 dewren99      4 Jul 30 2021 20:44 link_test_hard.txt
+673405 drwxrwxr-x  4 dewren99 dewren99   4096 Jun  7 2021 14:10 cmpt300-a1
+927965 -rw-rw-r--  1 dewren99 dewren99   9520 Jun  7 2021 14:10 list.o
+393320 drwxrwxr-x  3 dewren99 dewren99   4096 Jul 28 2021 17:03 cmpt300-a3
+393878 -rw-rw-r--  2 dewren99 dewren99      4 Jul 30 2021 20:44 link_test.txt
+940760 drwxrwxr-x  3 dewren99 dewren99   4096 Jul 28 2021 16:54 cmpt300-a2
+396124 lrwxrwxrwx  1 dewren99 dewren99     13 Jul 30 2021 20:45 link_test_soft.txt -> link_test.txt
+
+/home/dewren99/Desktop/SFU/CMPT300/cmpt300-a1:
+666089 -rw-rw-r--  1 dewren99 dewren99  21576 Jun  7 2021 14:10 main.o
+673347 -rw-rw-r--  1 dewren99 dewren99   5733 Jun  1 2021 17:37 list.h
+673372 -rw-rw-r--  1 dewren99 dewren99  13142 Jun  2 2021 18:17 list.c
+661437 -rw-rw-r--  1 dewren99 dewren99   9520 Jun  7 2021 14:10 list.o
+673436 -rw-rw-r--  1 dewren99 dewren99    263 May 30 2021 17:58 Makefile
+673439 -rw-rw-r--  1 dewren99 dewren99  16181 Jun  1 2021 09:25 main.c
+666101 -rwxrwxr-x  1 dewren99 dewren99  31344 Jun  7 2021 14:10 list
+
+/home/dewren99/Desktop/SFU/CMPT300/cmpt300-a3:
+394243 -rw-rw-r--  1 dewren99 dewren99    753 Jul 22 2021 10:50 menu.c
+394330 -rw-rw-r--  1 dewren99 dewren99    477 Jul 21 2021 16:02 pcb.h
+393356 -rw-------  1 dewren99 dewren99   5517 Jul  6 2021 14:29 list.h
+394242 -rw-rw-r--  1 dewren99 dewren99    407 Jul 21 2021 16:10 pcb.c
+394236 -rw-------  1 dewren99 dewren99   8704 Jul  6 2021 14:29 list.o
+393401 -rw-rw-r--  1 dewren99 dewren99    176 Jul 21 2021 23:09 Makefile
+393386 -rw-rw-r--  1 dewren99 dewren99    529 Jul 21 2021 16:09 main.c
+394333 -rw-rw-r--  1 dewren99 dewren99    345 Jul 21 2021 21:24 semaphore.h
+394686 -rw-rw-r--  1 dewren99 dewren99     18 Jul 10 2021 14:08 menu.h
+394172 -rw-rw-r--  1 dewren99 dewren99  27433 Jul 22 2021 10:39 command.c
+393832 -rw-rw-r--  1 dewren99 dewren99     70 Jul 22 2021 10:44 a3.code-workspace
+394679 -rw-rw-r--  1 dewren99 dewren99    383 Jul 21 2021 15:19 queues.h
+393833 -rw-rw-r--  1 dewren99 dewren99   1205 Jul 21 2021 21:24 semaphore.c
+394969 -rw-rw-r--  1 dewren99 dewren99    479 Jul 20 2021 21:59 README
+393758 -rw-rw-r--  1 dewren99 dewren99    810 Jul 20 2021 23:17 command.h
+394335 -rw-rw-r--  1 dewren99 dewren99   1288 Jul 20 2021 21:23 queues.c
+
+/home/dewren99/Desktop/SFU/CMPT300/cmpt300-a2:
+928071 -rw-rw-r--  1 dewren99 dewren99     34 Jun  9 2021 19:38 input_reciever.h
+949743 -rw-------  1 dewren99 dewren99   5517 Nov 17 2020 15:59 list.h
+950464 -rw-rw-r--  1 dewren99 dewren99    579 Jul  2 2021 13:58 README.txt
+920257 -rw-rw-r--  1 dewren99 dewren99   1340 Jul  2 2021 13:29 input_reciever.c
+927976 -rw-rw-r--  1 dewren99 dewren99     26 Jun  8 2021 22:58 client.h
+928127 -rw-rw-r--  1 dewren99 dewren99    100 Jun 15 2021 23:27 message.h
+949730 -rw-rw-r--  1 dewren99 dewren99   8704 Jun 28 2021 19:01 list.o
+928125 -rw-rw-r--  1 dewren99 dewren99     35 Jun 15 2021 23:43 message_printer.h
+944628 -rw-rw-r--  1 dewren99 dewren99    241 Jul  2 2021 13:59 Makefile
+934447 -rw-rw-r--  1 dewren99 dewren99   4841 Jul  2 2021 13:30 main.c
+949741 -rw-rw-r--  1 dewren99 dewren99     57 Jul  2 2021 12:07 terminate.h
+927963 -rw-rw-r--  1 dewren99 dewren99    130 Jun 28 2021 16:02 args.h
+920260 -rw-rw-r--  1 dewren99 dewren99   2748 Jul  2 2021 13:28 server.c
+949764 -rw-rw-r--  1 dewren99 dewren99    387 Jul  2 2021 12:09 terminate.c
+927971 -rw-rw-r--  1 dewren99 dewren99     26 Jun  8 2021 18:21 server.h
+920256 -rw-rw-r--  1 dewren99 dewren99   2057 Jul  2 2021 12:59 client.c
+920259 -rw-rw-r--  1 dewren99 dewren99    800 Jul  2 2021 13:00 message_printer.c
+
+/home/dewren99/Desktop/SFU/CMPT354:
+402501 -rw-rw-r--  1 dewren99 dewren99   2040 Jun 13 2021 13:17 CMPT354-a2-part1.sql
+dewren99@ubuntu:~/Desktop/300-a4$ 
