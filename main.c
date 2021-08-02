@@ -16,6 +16,7 @@
 static bool SHOW_INODE = false;
 static bool LONG_LIST_FORMAT = false;
 static bool LIST_RECURSIVELY = false;
+static bool DIR_PRINTED_ALTEAST_ONCE = false;
 
 const char *months[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -79,7 +80,7 @@ void printPermissions(const struct stat *buf) {
 void printFileName(const struct dirent *file, bool isSymbolicLink,
                    const char *fullPath, const struct stat *buf) {
     printf("%s", file->d_name);
-    if (isSymbolicLink) {
+    if (isSymbolicLink && LONG_LIST_FORMAT) {
         // linkSize inspired from
         // https://man7.org/linux/man-pages/man2/readlink.2.html
         ssize_t linkSize = buf->st_size + 1;
@@ -110,11 +111,16 @@ void printFileLength(const struct dirent *file) {  // not file size
 }
 void printInode(const struct dirent *file) {
     if (SHOW_INODE) {
-        printf("%lu ", file->d_ino);
+        printf("%6lu ", file->d_ino);
     }
 }
 void printPath(const char *path) { printf("%s:\n", path); }
-void printRecursiveSpacer() { printf("\n"); }
+void printRecursiveSpacer() {
+    if (!DIR_PRINTED_ALTEAST_ONCE) {
+        return;
+    }
+    printf("\n");
+}
 void printFileSize(const struct stat *buf) {
     if (!LONG_LIST_FORMAT) {
         return;
@@ -129,6 +135,9 @@ void printNumOfHardLinks(const struct stat *buf) {
 }
 
 void printLastModified(const struct stat *buf) {
+    if (!LONG_LIST_FORMAT) {
+        return;
+    }
     const time_t *mtime = &buf->st_mtime;
     const struct tm *lastModified = localtime(mtime);
     printf("%3s %2d %04d %02d:%02d ", months[lastModified->tm_mon],
@@ -139,29 +148,31 @@ void printLastModified(const struct stat *buf) {
 void printDir(const char *path) {
     DIR *pDir = validatePath(path);
     if (!pDir) {
+        printf("unixLs: cannot access \"%s\": No such file or directory", path);
         return;
     }
-    const char slash = '/';
     const struct dirent *curr = readdir(pDir);
     if (LIST_RECURSIVELY) {
         printRecursiveSpacer();
+        DIR_PRINTED_ALTEAST_ONCE = true;
         printPath(path);
     }
     while (curr) {
         if (isValidFile(curr)) {
             unsigned int subDirLen = 0;
             subDirLen += strlen(path);
-            subDirLen += strlen(&slash);  // accounts for the space for
-                                          // slash and extra space for '\0'
             subDirLen += strlen(curr->d_name);
+            subDirLen += 3;  // ['/', '/', '\0']
 
             char *subDir = calloc(subDirLen, sizeof(char));
-            snprintf(subDir, subDirLen, "%s/%s", path, curr->d_name);
+            const bool PathEndsWithSlash =
+                strlen(path) && path[strlen(path) - 1] == '/';
+            snprintf(subDir, subDirLen, PathEndsWithSlash ? "%s%s" : "%s/%s",
+                     path, curr->d_name);
 
             struct stat *buf = malloc(sizeof(struct stat));
             if (lstat(subDir, buf) == -1) {
                 fprintf(stderr, "stat() errno: %d for \"%s\"\n", errno, subDir);
-                // perror("stat() error");
             }
             printInode(curr);
             printPermissions(buf);
@@ -173,9 +184,6 @@ void printDir(const char *path) {
             printFileSize(buf);
             printLastModified(buf);
             printFileName(curr, curr->d_type == 10, subDir, buf);
-            if (LIST_RECURSIVELY && curr->d_type == 4) {
-                printDir(subDir);
-            }
             free(subDir);
             free(buf);
             subDir = NULL;
@@ -183,10 +191,50 @@ void printDir(const char *path) {
         }
         curr = readdir(pDir);
     }
+    if (LIST_RECURSIVELY) {
+        rewinddir(pDir);
+        curr = readdir(pDir);
+        while (curr) {
+            if (isValidFile(curr)) {
+                unsigned int subDirLen = 0;
+                subDirLen += strlen(path);
+                subDirLen += strlen(curr->d_name);
+                subDirLen += 3;  // ['/', '/', '\0']
+
+                char *subDir = calloc(subDirLen, sizeof(char));
+                const bool PathEndsWithSlash =
+                    strlen(path) && path[strlen(path) - 1] == '/';
+                snprintf(subDir, subDirLen,
+                         PathEndsWithSlash ? "%s%s" : "%s/%s", path,
+                         curr->d_name);
+
+                struct stat *buf = malloc(sizeof(struct stat));
+                if (lstat(subDir, buf) == -1) {
+                    fprintf(stderr,
+                            "\nstat() errno: %d inside recursive option for "
+                            "\"%s\"\n",
+                            errno, subDir);
+                    // perror("stat() error");
+                }
+
+                if (curr->d_type == 4) {
+                    printDir(subDir);
+                }
+                free(subDir);
+                free(buf);
+                subDir = NULL;
+                buf = NULL;
+            }
+            curr = readdir(pDir);
+        }
+    }
     closedir(pDir);
 }
 
 void setSelectedFlags(const char *flags) {
+    if (!flags) {
+        return;
+    }
     const size_t len = strlen(flags);
     unsigned int i = 0;
 
@@ -208,7 +256,7 @@ int main(int argc, char **argv) {
     const char *path = NULL;
 
     if (argc > 3) {
-        printf("Maximum argument number is 3, you've passed %d arguments\n",
+        printf("\nMaximum argument number is 3, you've passed %d arguments\n",
                argc);
         return -1;
     }
@@ -227,9 +275,9 @@ int main(int argc, char **argv) {
         path = &defaultPath;
     }
 
-    printf("argc: %d\n", argc);
-    printf("flags: %s\n", flags);
-    printf("path: %s\n", path);
+    // printf("argc: %d\n", argc);
+    // printf("flags: %s\n", flags);
+    // printf("path: %s\n", path);
 
     if (!validateFlags(flags) || !validatePath(path)) {
         return -1;
