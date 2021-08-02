@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "validators.h"
 
@@ -15,28 +17,29 @@ static bool SHOW_INODE = false;
 static bool LONG_LIST_FORMAT = false;
 static bool LIST_RECURSIVELY = false;
 
-void getAndPrintGroup(gid_t grpNum) {
-    struct group *grp;
+const char *months[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
+void getAndPrintGroup(const struct stat *buf) {
+    if (!LONG_LIST_FORMAT) {
+        return;
+    }
+    const gid_t grpNum = buf->st_gid;
+    struct group *grp = NULL;
     grp = getgrgid(grpNum);
 
-    if (grp) {
-        printf("The group ID %u -> %s\n", grpNum, grp->gr_name);
-    } else {
-        printf("No group name for %u found\n", grpNum);
-    }
+    printf("%s ", grp ? grp->gr_name : "-");
 }
 
-void getAndPrintUserName(uid_t uid) {
+void getAndPrintUserName(const struct stat *buf) {
+    if (!LONG_LIST_FORMAT) {
+        return;
+    }
+    const uid_t uid = buf->st_uid;
     struct passwd *pw = NULL;
     pw = getpwuid(uid);
 
-    if (pw) {
-        printf("The user ID %u -> %s\n", uid, pw->pw_name);
-    } else {
-        perror("Hmm not found???");
-        printf("No name found for %u\n", uid);
-    }
+    printf("%s ", pw ? pw->pw_name : "-");
 }
 
 bool isValidFile(const struct dirent *file) {
@@ -51,8 +54,16 @@ void printPermissions(const struct stat *buf) {
     if (!LONG_LIST_FORMAT) {
         return;
     }
+    char fileType = '-';
     const mode_t mode = buf->st_mode;
-    printf((S_ISDIR(mode)) ? "d" : "-");
+    if (S_ISDIR(mode)) {
+        fileType = 'd';
+    } else if (S_ISCHR(mode)) {
+        fileType = 'c';
+    } else if (S_ISLNK(mode)) {
+        fileType = 'l';
+    }
+    printf("%c", fileType);
     printf((mode & S_IRUSR) ? "r" : "-");
     printf((mode & S_IWUSR) ? "w" : "-");
     printf((mode & S_IXUSR) ? "x" : "-");
@@ -62,10 +73,36 @@ void printPermissions(const struct stat *buf) {
     printf((mode & S_IROTH) ? "r" : "-");
     printf((mode & S_IWOTH) ? "w" : "-");
     printf((mode & S_IXOTH) ? "x" : "-");
+    printf(" ");
 }
 
-void printFileName(const struct dirent *file) { printf("%s\n", file->d_name); }
-void printFileType(const struct dirent *file) { printf("%u ", file->d_type); }
+void printFileName(const struct dirent *file, bool isSymbolicLink,
+                   const char *fullPath, const struct stat *buf) {
+    printf("%s", file->d_name);
+    if (isSymbolicLink) {
+        // linkSize inspired from
+        // https://man7.org/linux/man-pages/man2/readlink.2.html
+        ssize_t linkSize = buf->st_size + 1;
+        if (!buf->st_size) {
+            linkSize = PATH_MAX;
+        }
+        char *link = calloc(linkSize, sizeof(char));
+        ssize_t res = readlink(fullPath, link, linkSize);
+        if (res == -1) {
+            fprintf(stderr, "Value of errno: %d\n", errno);
+            perror("Error printed by readlink");
+        } else {
+            printf(" -> %s", link);
+        }
+
+        free(link);
+        link = NULL;
+    }
+    printf("\n");
+}
+void printFileType(const struct dirent *file) {
+    printf("type:%u ", file->d_type);
+}
 void printFileLength(const struct dirent *file) {  // not file size
     if (LONG_LIST_FORMAT) {
         printf("%hu ", file->d_reclen);
@@ -78,9 +115,25 @@ void printInode(const struct dirent *file) {
 }
 void printPath(const char *path) { printf("%s:\n", path); }
 void printRecursiveSpacer() { printf("\n"); }
-void printFileSize(const struct stat *buf) { printf("%ld ", buf->st_size); }
+void printFileSize(const struct stat *buf) {
+    if (!LONG_LIST_FORMAT) {
+        return;
+    }
+    printf("%6ld ", buf->st_size);
+}
 void printNumOfHardLinks(const struct stat *buf) {
-    printf(" %ld ", buf->st_nlink);
+    if (!LONG_LIST_FORMAT) {
+        return;
+    }
+    printf("%2ld ", buf->st_nlink);
+}
+
+void printLastModified(const struct stat *buf) {
+    const time_t *mtime = &buf->st_mtime;
+    const struct tm *lastModified = localtime(mtime);
+    printf("%3s %2d %04d %02d:%02d ", months[lastModified->tm_mon],
+           lastModified->tm_mday, lastModified->tm_year + 1900,
+           lastModified->tm_hour, lastModified->tm_min);
 }
 
 void printDir(const char *path) {
@@ -106,17 +159,20 @@ void printDir(const char *path) {
             snprintf(subDir, subDirLen, "%s/%s", path, curr->d_name);
 
             struct stat *buf = malloc(sizeof(struct stat));
-            if (stat(subDir, buf) == -1) {
-                fprintf(stderr, "stat() errno: %d\n", errno);
-                perror("stat() error: ");
+            if (lstat(subDir, buf) == -1) {
+                fprintf(stderr, "stat() errno: %d for \"%s\"\n", errno, subDir);
+                // perror("stat() error");
             }
             printInode(curr);
             printPermissions(buf);
             printNumOfHardLinks(buf);
+            getAndPrintUserName(buf);
+            getAndPrintGroup(buf);
             // printFileLength(curr);
-            printFileType(curr);
+            // printFileType(curr);
             printFileSize(buf);
-            printFileName(curr);
+            printLastModified(buf);
+            printFileName(curr, curr->d_type == 10, subDir, buf);
             if (LIST_RECURSIVELY && curr->d_type == 4) {
                 printDir(subDir);
             }
@@ -181,21 +237,5 @@ int main(int argc, char **argv) {
 
     setSelectedFlags(flags);
     printDir(path);
-
-    printf("\n\n");
-
-    // struct group *grp;
-
-    // getAndPrintGroup(1001);
-    // getAndPrintGroup(514378);
-    // getAndPrintGroup(103);
-    // getAndPrintGroup(1000);
-
-    // getAndPrintUserName(59894);
-    // getAndPrintUserName(23524);
-    // getAndPrintUserName(20746);
-    // getAndPrintUserName(5970);
-    // getAndPrintUserName(10485);
-
     return 0;
 }
