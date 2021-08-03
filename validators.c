@@ -38,10 +38,19 @@ DIR *validatePath(const char *path) {
     if (pDir) {
         return pDir;
     } else {
-        printf("Could not open the path \"%s\"\n", path);
-        printf("path len: %ld\n", strlen(path));
-        fprintf(stderr, "Value of errno: %d\n", errno);
-        perror("Error printed by perror");
+        printf("unixLs: cannot access \"%s\": No such file or directory\n",
+               path);
+        // printf("Could not open the path \"%s\"\n", path);
+        // printf("path len: %ld\n", strlen(path));
+        // fprintf(stderr, "Value of errno: %d\n", errno);
+        // perror("Error printed by perror");
         return NULL;
     }
+}
+
+bool isFlagArg(char *arg) {
+    if (arg && strlen(arg) && arg[0] == '-') {
+        return true;
+    }
+    return false;
 }

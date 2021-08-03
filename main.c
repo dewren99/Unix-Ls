@@ -17,6 +17,7 @@ static bool SHOW_INODE = false;
 static bool LONG_LIST_FORMAT = false;
 static bool LIST_RECURSIVELY = false;
 static bool DIR_PRINTED_ALTEAST_ONCE = false;
+static bool MULTIPLE_DIR_REQUESTS = false;
 
 const char *months[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -148,11 +149,10 @@ void printLastModified(const struct stat *buf) {
 void printDir(const char *path) {
     DIR *pDir = validatePath(path);
     if (!pDir) {
-        printf("unixLs: cannot access \"%s\": No such file or directory", path);
         return;
     }
     const struct dirent *curr = readdir(pDir);
-    if (LIST_RECURSIVELY) {
+    if (LIST_RECURSIVELY || MULTIPLE_DIR_REQUESTS) {
         printRecursiveSpacer();
         DIR_PRINTED_ALTEAST_ONCE = true;
         printPath(path);
@@ -251,39 +251,36 @@ void setSelectedFlags(const char *flags) {
 }
 
 int main(int argc, char **argv) {
-    const char defaultPath[2] = {'.', '\0'};
-    const char *flags = NULL;
-    const char *path = NULL;
-
-    if (argc > 3) {
-        printf("\nMaximum argument number is 3, you've passed %d arguments\n",
-               argc);
-        return -1;
-    }
-
-    path = defaultPath;
-    if (argc == 3) {
-        path = argv[2];
-        flags = argv[1];
-    }
-    if (argc == 2) {
-        // check if 2nd arg are flags, else its path
-        if (strncmp(argv[1], "-", 1) == 0) {
-            flags = argv[1];
-        } else {
-            path = argv[1];
-        }
-    }
-
     // printf("argc: %d\n", argc);
-    // printf("flags: %s\n", flags);
-    // printf("path: %s\n", path);
+    const char defaultPath[2] = {'.', '\0'};
 
-    if (!validateFlags(flags) || !validatePath(path)) {
-        return -1;
+    unsigned int i = 1;  // argv[0] always "./UnixLs"
+    while (i < argc) {
+        // printf("argv[%d]: %s\n", i, argv[i]);
+        if (isFlagArg(argv[i])) {
+            if (validateFlags(argv[i])) {
+                setSelectedFlags(argv[i]);
+            } else {
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            break;
+        }
+        i++;
     }
 
-    setSelectedFlags(flags);
-    printDir(path);
+    MULTIPLE_DIR_REQUESTS = argc - i > 1;
+
+    unsigned int numOfDirArgs = 0;
+    while (i < argc) {
+        numOfDirArgs++;
+        printDir(argv[i]);
+        i++;
+    }
+
+    if (argc == 1 || !numOfDirArgs) {
+        printDir(defaultPath);
+    }
+
     return 0;
 }
